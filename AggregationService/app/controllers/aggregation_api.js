@@ -1,10 +1,10 @@
 var express   = require('express'),
     router    = express.Router(),
+    crypto    = require('crypto'),
+    appId     = require('./../../config/config').app.id,
     bus       = require('./../coordinator/bus'),
     validator = require('./../validator/validator'),
     amqp      = require('amqplib/callback_api'),
-    render    = require('./render'),
-    auth      = require('basic-auth'),
     interval  = 20000;// 20s to repeate check live
     
 
@@ -70,27 +70,25 @@ setInterval(function(){
 }, interval);
 
 //  Auth
-router.post('/auth', function(req, res, next){
-  let getToken = function getBearerToken(req){
-    return req.headers.authorization.split(' ')[1];
-  }
-  if (req.headers.authorization.indexOf('Basic') === 0){
-    let user = auth(req);
-    const info = {
-      login     : user.name,
-      password  : user.pass
-    };
-    return bus.getTokenByPwd(info, function(err, status, responseText){
-      return res.status(status).send(responseText);
-    });
-  } else if (req.headers.authorization.indexOf('Bearer') === 0) {
-    const info = {
-      ref_token : getToken(req)
-    };
-    return bus.getTokenByToken(info, function(err, status, responseText){
-      res.status(status).send(responseText);
-    });
-  }
+router.get('/auth', function(req, res, next){
+  const authUrl = "http://localhost:3001/auth/authorization?";
+  const aggregatorUrl = "http://localhost:3000/aggregator/code";
+  const queryParametrs = ['response_type=code', 'app_id=' + appId, 'redirect_uri='+ aggregatorUrl];
+  const url = authUrl + queryParametrs.join('&');
+  return res.status(302).redirect(url);
+});
+
+router.get('/code', function(req, res, next){
+  const code = decodeURIComponent(req.query.code);
+  const redirUrl = "http://localhost:3000/aggregator/usertokens";
+  if (!code || typeof(code) == 'undefined' || code.length == 0)
+    return res.status(500).send({status : "Service Error", message : "Authorization service did not send code"});
+  const info = {
+    code : code
+  };
+  return bus.getTokenByCode(info, function(err, status, response){
+    return res.status(status).send(response);
+  });
 });
 
 // Get any cars
