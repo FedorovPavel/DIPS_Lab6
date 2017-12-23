@@ -78,6 +78,18 @@ router.get('/auth', function(req, res, next){
   return res.status(302).redirect(url);
 });
 
+router.post('/authByToken', function(req, res ,next){
+  let getToken = function getBearerToken(req){
+    return req.headers.authorization.split(' ')[1];
+  }
+  const data = {
+    ref_token : getToken(req)
+  };
+  return bus.getTokenByToken(data, function(err, status, response){
+    return res.status(status).send(response);
+  });
+});
+
 router.get('/code', function(req, res, next){
   const code = decodeURIComponent(req.query.code);
   const redirUrl = "http://localhost:3000/aggregator/usertokens";
