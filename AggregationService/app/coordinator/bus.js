@@ -12,14 +12,14 @@ var     AuthToken   = null,
 
 module.exports = {
     //  AuthMethods
-    getTokenByPwd : function(info, callback){
+    getTokenByCode : function(info, callback){
         let main_function = function(info, callback){
-            const url = _AuthHost + '/auth/token';
-            const options = createOptions(url, 'POST', AuthToken);
+            const url = _AuthHost + "/auth/token";
+            const options = createOptions(url, "POST", AuthToken);
             const data = {
-                grant_type  : 'password',
-                login       : info.login,
-                password    : info.password
+                grant_type  : "authorization_code",
+                code        : info.code,
+                redirect_uri: info.redirect
             };
             return createAndSendHttpPostRequest(options, data, function(err, status, response){
                 return responseHandlerObject(err, status, response, function(err, status, response){
