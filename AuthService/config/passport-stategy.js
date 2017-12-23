@@ -19,6 +19,29 @@ module.exports = {
 			return done(null, null, app_cli);
 		});
 	},
+	checkServiceById : function(appId, done){
+		console.log('Проверка сервиса для выдачи code flow по appId');
+		return ClientModel.findOne({appId : appId}, function(err, app_cli){
+			if (err)
+				return done(err, 500);
+			if (!app_cli)
+				return done('App not found', 404);
+			return done(null, 200, true);
+		});
+	},
+	getUserCode : function(login, password, done){
+		console.log('Выдача code для пользователя');
+		return UserModel.findOne({login: login}, function(err, user){
+			if (err)
+				return done(err , 500, null);
+			if (!user)
+				return done("User not found", 500, null);
+			if (!user.checkPassword(password))
+				return done("Password is wrong", 400, null);
+			const code = user.code;
+			return done(null, 200, code);
+		});
+	},
 	checkServiceAccessToken : function(accessToken, done){
 		console.log('Проверка сервиса запрашивающего авторизацию по token');
 		return AccessToken.findOne({token : accessToken}, function(err, token){
@@ -49,7 +72,7 @@ module.exports = {
 		let tokenValue = crypto.randomBytes(32).toString('base64');
 		let token = new AccessToken({
 			userId 	: application.id,
-			token		: tokenValue
+			token	: tokenValue
 		});
 		return token.save(function(err, token){
 			if (err)
@@ -63,24 +86,20 @@ module.exports = {
 			return done(null, null, scope);
 		});
 	},
-	createTokenForUser : function(login, password, done){
+	createTokenForUser : function(code, done){
 		//  Ищем юзера с указанным логином
-		console.log('Создание токена для юзера по логину и паролю');
-		return UserModel.findOne({login: login}, function(err, user){
+		console.log('Создание токена для юзера по code');
+		return UserModel.findOne({code: code}, function(err, user){
 			//  Если ошибка вернут ошибку
 			if (err)
 				return done(err, 500);
 			//  Если пользователя нет вернуть провал получения токена
 			if (!user)
-				return done('User with this login or password not found', 400, false);
-			//  Если пароль не совпадает вернуть провал получения токена
-			if (!user.checkPassword(password))
-				return done('Wrong password', 401, false);
+				return done('User with this code not found', 401, false);
 			//  Удаляем refreshToken
 			RefreshToken.remove({userId: user.userId}, function(err){
-				if (err) {
+				if (err) 
 					return done(err);
-				}
 				return console.log('Удален refresh-токен для пользователя ' + user.login);
 			});
 			//  Удаляем токен
@@ -95,20 +114,20 @@ module.exports = {
 			let refreshTokenValue = crypto.randomBytes(32).toString('base64');
 			//  создаем объект БД токен
 			let token = new AccessToken({
-					token   : tokenValue,
-					userId  : user.id
+				token   : tokenValue,
+				userId  : user.id
 			});
 			//  Создаем объект БД refresh-токен
 			let refreshToken = new RefreshToken({
-					token   : refreshTokenValue, 
-					userId  : user.id
+				token   : refreshTokenValue, 
+				userId  : user.id
 			});
 			//  Сохраняем refresh-токен в БД
-			refreshToken.save(function(err){
+			return refreshToken.save(function(err){
 				if (err)
 					return done(err, 500);
 				//  Сохраняем токен в БД
-				token.save(function(err, token){
+				return token.save(function(err, token){
 					if (err)
 						return done(err, 500);
 					//  Считать валидацию OAuth успешной, вернуть 
@@ -116,11 +135,10 @@ module.exports = {
 					//  refreshToken
 					//  Время жизни токена
 					let scope = {
-						user : user,
-						access_token : tokenValue,
-						refresh_token : refreshTokenValue,
-						expires_in	: config.security.userTokenLife
-					}
+						access_token 	: tokenValue,
+						refresh_token 	: refreshTokenValue,
+						expires_in		: config.security.userTokenLife
+					};
 					return done(null, null, scope);
 				});
 			});

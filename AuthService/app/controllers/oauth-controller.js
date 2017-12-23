@@ -1,10 +1,44 @@
 const express   = require('express'),
       router    = express.Router(),
+      validator = require('./../validator/login'),
       passport  = require('./../logic/my-passport');
 
 module.exports = (app) => {
   app.use('/auth', router);
 };
+
+router.get('/authorization', function(req, res, next){
+  res.render('auth', {
+    response_type : req.query.response_type,
+    redirect_uri  : req.query.redirect_uri,
+    app_id        : req.query.app_id
+  });
+});
+
+router.post('/login', function(req, res, next){
+  const data = {
+    responseType  : validator.checkResponseType(req.body.response_type),
+    appId         : validator.checkAvailability(req.body.app_id),
+    redirect_uri  : validator.checkAvailability(req.body.redirect_uri),
+    login         : req.body.login,
+    password      : req.body.password
+  };
+  if (!data.appId || !data.redirect_uri || !data.responseType)
+    return res.status(401).send({status : "Error", message : "One of parametrs is undefined"});
+  if (!data.login || !data.password){
+    return res.status(401).render('auth',{
+      response_type : data.responseType,
+      redirect_uri : data.redirect_uri,
+      app_id : data.appId
+    });
+  }
+  return passport.getUserCode(data, function(err, status, result){
+    if (err)
+      return res.status(status).send(err);
+    const fullUrl = data.redirect_uri + "?code=" + encodeURIComponent(result);
+    return res.redirect(302, fullUrl);
+  });
+});
 
 router.post('/token', function(req, res, next){
   const header_auth = req.headers['authorization'];     //  считываем заголовок из headers
@@ -21,10 +55,10 @@ router.post('/token', function(req, res, next){
       //  Определим тип запроса token
       let type = req.body.grant_type;
       //  Если запрос по паролю
-      if (type === 'password'){
-        return passwordAuthorization(req, res, next, scope);
+      if (type === 'authorization_code'){
+        return AuthorizationByCode(req, res, next, scope);
       } else if (type === 'refresh_token'){
-        return refreshTokenAuthorization(req, res, next, scope);
+        return AuthorizationByToken(req, res, next, scope);
       } else {
         //  Если запрос ни по паролю, ни по токену
         return res.status(400).send(getResponseObject('Error', 'Parametr "grant_type" is undefined'));
@@ -68,21 +102,20 @@ function getResponseObject(status, response){
   };
 }
 
-function passwordAuthorization(req, res, next, service_scope){
-  //  Получить логин пароль
-  const log = req.body.login;
-  const pwd = req.body.password;
-  //  Если логин/пароль не определены отправить bad request
-  if (!log || !pwd || typeof(log) == 'undefined' || typeof(pwd) == 'undefined')
-    return res.status(400).send(getResponseObject('Error', 'Bad request login or password is undefined'));
+function AuthorizationByCode(req, res, next, service_scope){
+  //  Получить code
+  const code = req.body.code;
+  //  Если сode не определен отправить bad request
+  if (!code || typeof(code) == 'undefined')
+    return res.status(400).send(getResponseObject('Error', 'Bad request code is undefined'));
   //  Установить новые токены по паролю и логину
-  return passport.setUserTokenByPwd(log, pwd, function(err, status, user_scope){
+  return passport.setUserTokenByCode(code, function(err, status, user_scope){
     //  Если возникла ошибка сообщить
     if (err)
       return res.status(status).send(getResponseObject('Error', err));
     //  Если нет информации о выданных токенах вернуть ошибку
     if (!user_scope)
-      return res.status(status).send(getResponseObject('Error', 'User for this password and login is not found'));
+      return res.status(status).send(getResponseObject('Error', 'User for this code is not found'));
     // Формирование ответа
     const data = { content : user_scope };
     if (service_scope !== true)
@@ -92,7 +125,7 @@ function passwordAuthorization(req, res, next, service_scope){
   });
 }
 
-function refreshTokenAuthorization(req, res, next, service_scope){
+function AuthorizationByToken(req, res, next, service_scope){
   //  Если запрос по refresh token'у
   const token = req.body.refresh_token;
   if (!token || typeof(token) == 'undefined')

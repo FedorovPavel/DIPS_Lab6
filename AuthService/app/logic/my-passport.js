@@ -20,10 +20,27 @@ module.exports = {
         return callback('Unknown authorization type', 400, null);
     },
     /**
+     * @param {Object} data - data
+     */
+    getUserCode : function(data, callback){
+        const valid = checkResponseType(data.responseType, 'code');
+        if (!valid)
+            return callback('Invalid response_type', 400, null);
+        return strategy.checkServiceById(data.appId, function(err, status, response){
+            if (err)
+                return callback(err, status, response);
+            if (!response)
+                return callback(err, status, null);
+            return strategy.getUserCode(data.login, data.password, function(err, status, code){
+                return callback(err, status, code);
+            });
+        });
+    },
+    /**
      * Установка token'ов для пользователя
      */
-    setUserTokenByPwd : function(log, pwd, callback){
-        return strategy.createTokenForUser(log, pwd, function(err, status, scope){
+    setUserTokenByCode : function(code, callback){
+        return strategy.createTokenForUser(code, function(err, status, scope){
             if (err)
                 return callback(err, status, null);
             if (!scope)
@@ -82,6 +99,12 @@ function checkBearerAuthorization(header_authorization, callback){
             return callback(err, status, null);
         return callback(null, status, result);
     });
+}
+
+function checkResponseType(type, needed_type){
+    if (type === needed_type)
+        return true;
+    return false;
 }
 
 function getBearer(token){
