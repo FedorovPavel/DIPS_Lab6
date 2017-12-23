@@ -13,6 +13,12 @@ const UserSchema = new Schema({
     type      :String, 
     required  : true
   },
+  role : {
+    type : String
+  },
+  code : {
+    type : String
+  },
   salt            : {
     type      : String,
     required  : true
