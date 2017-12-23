@@ -1,16 +1,15 @@
 class car{
     constructor(refToMenu){
         this.menu = refToMenu;
-        this.template;
+        this.template = null;
         this.getCarTemplate();
     }
 
     getCarTemplate(){
         let self = this;
-        const url = '/carTemplates';
-        $.get(url, function(template){
-            self.template = $.parseHTML(template);
-        });
+        self.template = $('div#car_template').clone();
+        $('div#car_template').remove();
+        $(self.template).removeAttr('id');
         return;
     }
 

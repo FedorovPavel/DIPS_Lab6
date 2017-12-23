@@ -1,9 +1,9 @@
 class order{
     constructor(menu){
         this.menu       = menu;
-        this.template   = null;
-        this.draft      = null;
-        this.paid       = null;
+        this.orderTemplate  = null;
+        this.draftTemplate  = null;
+        this.paidTemplate   = null;
         this.getOrderTemplate();
         this.getDraftTemplate();
         this.getPaidTemplate();
@@ -13,28 +13,24 @@ class order{
     //  Получение шаблона для оформления платежа
     getPaidTemplate(){
         let self = this;
-        const url = '/orderTemplate/paid';
-        $.get(url, function(template){
-            self.paid = $.parseHTML(template);
-        });
+        self.paidTemplate = $('div#order_paid_template').children().clone();
+        $('div#order_paid_template').remove();
+        return;
     }
 
     //  Получение шаблона для заказа
     getOrderTemplate(){
         let self = this;
-        const url = '/orderTemplate';
-        $.get(url, function(template){
-            self.template = $.parseHTML(template);
-        });
+        self.orderTemplate = $('div#order_template').clone();
+        $('div#order_template').remove();
+        $(self.orderTemplate).removeAttr('id');
     }
 
     //  Получение шаблона для оформления заказа
     getDraftTemplate(){
         let self = this;
-        const url = '/orderTemplate/draft';
-        $.get(url, function(template){
-            self.draft = $.parseHTML(template);
-        });
+        self.draftTemplate = $('div#draft_template').children().clone();
+        $('div#draft_template').remove();
     }
 
     //  Обработчик завершения заказа
@@ -219,6 +215,9 @@ class order{
                     self.fillListWithOrder(res.content);
                     self.menu.pagination(res.info.current, res.info.pages);
                 }
+            } else if (req.status == 503){
+                self.menu.rendErrorTemplateToList(req.response, req.status);
+                self.menu.pagination(0,0);
             } else {
                 self.menu.rendErrorTemplateToList(JSON.parse(req.response).message, req.status);
                 self.menu.pagination(0,0);

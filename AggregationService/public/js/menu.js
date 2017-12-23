@@ -23,10 +23,9 @@ class menu {
     //  Получение шаблона для вывода ошибок
     getErrorTemplate(){
         let self = this;
-        const url = '/errorTemplates';
-        $.get(url, function(template){
-            self.errorTemplate = $.parseHTML(template);
-        });
+        self.errorTemplate = $('div#error_template').clone();
+        $('div#error_template').remove();
+        $(self.errorTemplate).removeAttr('id');
         return;
     }
     //  Отображение template
@@ -144,9 +143,7 @@ class menu {
         const cars      = menuPills.find('li#automobile-pill');
         const orders    = menuPills.find('li#orders-pill');
         const auth      = $('button#auth_submit').click(function(){
-            const login = $('input#login').val();
-            const pwd = $('input#pwd').val();
-            self.authUser(login, pwd);
+            self.authUser();
         });
         $(cars).click(function(){
             $(menuPills).find('li').removeClass('active');
@@ -414,29 +411,36 @@ class menu {
         }
     };
 
-    authUser(login, pwd){
-        let req = new XMLHttpRequest();
+    authUser(){
         let self = this;
-        const url = '/aggregator/auth';
-        req.open('POST', url, true);
-        req.setRequestHeader("Authorization", "Basic " + btoa(login +':' + pwd));
-        req.onreadystatechange = function(){
-            if (req.readyState != 4)
-                return;
-            if (req.status != 200){
-                self.rendErrorTemplate(req.response, req.status);
-                $('div#authForm').removeClass('hidden');
-                return;
-            } else if (req.status == 200){
-                let res = JSON.parse(req.response);
-                res = res.content;
+        let frame = document.createElement('iframe');
+        frame.id = 'auth';
+        frame.sandbox.add("allow-forms");
+        frame.sandbox.add("allow-pointer-lock");
+        frame.sandbox.add("allow-popups");
+        frame.sandbox.add("allow-same-origin");
+        frame.sandbox.add("allow-scripts");
+        frame.sandbox.add("allow-top-navigation");
+        frame.src = 'http://localhost:3000/aggregator/auth';
+        $('body').append(frame);
+        frame.onload = function(){
+            frame.style.display = 'none';
+            let url = "";
+            try{
+                url = frame.contentWindow.location.origin + frame.contentWindow.location.pathname;
+            } catch(err){
+                frame.style.display = 'block';
+            }
+            const check = /http:\/\/localhost:3000\/aggregator\/code/;
+            if (check.test(url)){
+                let res = JSON.parse(frame.contentWindow.document.body.innerText).content;
                 self.token = res.access_token;
                 self.refreshToken = res.refresh_token;
-                self.experidToken();
-                $('div#authForm').addClass('hidden');
+                $(frame).remove();
+            } else {
+                frame.style.display = 'block';
             }
         }
-        req.send();
     }
 
     refresh(){
@@ -459,10 +463,7 @@ class menu {
                 self.refreshToken = res.refresh_token;
                 return;
             }
-        }
-        // }
-        // req.send();
-        
+        }        
     }
 
     experidToken(){
