@@ -11,6 +11,7 @@ var config = {
       secret  : 'aggregatorKey'
     },
     port: process.env.PORT || 3000,
+    db: 'mongodb://localhost/aggregator-development'
   },
 
   test: {
@@ -21,6 +22,7 @@ var config = {
       secret  : 'aggregatorKey'
     },
     port: process.env.PORT || 3000,
+    db: 'mongodb://localhost/aggregator-development'
   },
 
   production: {
@@ -31,6 +33,7 @@ var config = {
       secret  : 'aggregatorKey'
     },
     port: process.env.PORT || 3000,
+    db: 'mongodb://localhost/aggregator-development'
   }
 };
 
