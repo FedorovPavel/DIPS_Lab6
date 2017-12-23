@@ -400,7 +400,7 @@ class menu {
 
     createDraftOrder(car){
         if (!this.draftExecution){
-            let panel = $(this.order.draft).clone();
+            let panel = $(this.order.draftTemplate).clone();
             this.fillDraftPanel(panel, car);
             this.draftExecution = true;
             $('body').append(panel);
@@ -447,7 +447,7 @@ class menu {
         let req = new XMLHttpRequest();
         let self = this;
         if (self.refreshToken != null){
-            const url = '/aggregator/auth';
+            const url = '/aggregator/authByToken';
             req.open('POST', url, false);
             req.setRequestHeader("Authorization", "Bearer " + self.refreshToken);
             req.send(null);

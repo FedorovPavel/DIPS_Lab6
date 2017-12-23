@@ -133,7 +133,7 @@ class order{
                 $('body').append(form);
             } else {
                 self.paidOperation = true;
-                const form = $(self.paid).clone();
+                const form = $(self.paidTemplate).clone();
                 self.fillingPaidForm(id, form, sender);
                 $('body').append(form);
             }
@@ -231,7 +231,7 @@ class order{
         let self = this;
         for (let I = 0; I < list.length; I++){
             const content = list[I];
-            let record = $(self.template).clone();
+            let record = $(self.orderTemplate).clone();
             $(record).attr('id', content.ID);
             $(record).find('div.record_header').attr('orderId',content.ID)
                                                     .attr('filling',false)
