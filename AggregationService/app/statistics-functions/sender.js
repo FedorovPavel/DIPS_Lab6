@@ -1,6 +1,6 @@
 const mongoose  = require("mongoose"),
       amqp      = require("amqplib/callback_api"),
-      receiver  = require('./receiver'),
+      //receiver  = require('./receiver'),
       config    = require('./../../config/config'),
       timeoutStep = config.app.timeout,
       repeatCount = config.app.repeat;
@@ -79,18 +79,43 @@ function bindForTimeOut(id, handler){
 }
 
 function pushToQueueAuthByCode(id, info){
+    let reply = function(msg){
+        const message = JSON.parse(Buffer.from(msg.content).toString("utf-8"));
+                const id = msg.properties.correlationId;
+                if (message.state == "OK"){
+                    console.log('Record :' + id + " by AuthCode successfully processed on statistics server");
+                    return model.removeRecord(id, function(err, result){
+                        if (err)
+                            return console.log("FAIL to remove record");
+                        if (result == true){
+                            return console.log("Record : "+ id+ " successfully removed from DB");
+                        }
+                    });
+                } else {
+                    console.log('Record :' + id + " by AuthCode have status : "+message.state+" after processed on statistics server");
+                    console.log('Detail info:');
+                    console.log(message.descriptions);
+                    return model.removeRecord(id, function(err, result){
+                        if (err)
+                            return console.log("FAIL to remove record");
+                        if (result == true){
+                            return console.log("Record : "+ id+ " successfully removed from DB");
+                        }
+                    });
+                }
+    }
     amqp.connect('amqp://localhost', function(err, conn){
         conn.createChannel(function(err, ch){
-            var queue = 'authCodeTask';
-
-            ch.assertQueue(queue, {durable : false});
-
-            ch.prefetch(1);
-        
-            ch.sendToQueue(queue, Buffer(info),{
-                correlationId : id
+            ch.assertQueue('', {}, function(err, q){
+                ch.consume(q.queue, function(msg){
+                   console.log('receive msg : '+ Buffer.from(msg.content).toString('utf-8'));
+                }, {noAck : true});
+                ch.sendToQueue("authCode", new Buffer(info),{
+                    correlationId : id,
+                    replyTo : q.queue
+                });
+                console.log('Record id: ' + id + ' push to queue []');
             });
-            console.log('Record id: ' + id + ' push to queue [' + queue + ']');
         });
     });
 }
