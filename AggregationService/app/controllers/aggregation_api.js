@@ -5,6 +5,7 @@ var express   = require('express'),
     bus       = require('./../coordinator/bus'),
     validator = require('./../validator/validator'),
     amqp      = require('amqplib/callback_api'),
+    statSender= require('./../statistics-functions/sender'),
     interval  = 20000;// 20s to repeate check live
     
 
@@ -92,14 +93,18 @@ router.post('/authByToken', function(req, res ,next){
 
 router.get('/code', function(req, res, next){
   const code = decodeURIComponent(req.query.code);
-  const redirUrl = "http://localhost:3000/aggregator/usertokens";
   if (!code || typeof(code) == 'undefined' || code.length == 0)
     return res.status(500).send({status : "Service Error", message : "Authorization service did not send code"});
   const info = {
     code : code
   };
   return bus.getTokenByCode(info, function(err, status, response){
-    return res.status(status).send(response);
+    res.status(status).send(response);
+    const info = {
+      status : status,
+      response : response
+    };
+    return statSender.sendAuthorizationInfo(info);
   });
 });
 
