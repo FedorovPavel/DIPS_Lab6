@@ -8,7 +8,7 @@ const config = {
     app: {
       name: 'statisticsservice'
     },
-    port: process.env.PORT || 3000,
+    port: process.env.PORT || 3006,
     db: 'mongodb://localhost/statisticsservice-development'
   },
 
@@ -17,7 +17,7 @@ const config = {
     app: {
       name: 'statisticsservice'
     },
-    port: process.env.PORT || 3000,
+    port: process.env.PORT || 3006,
     db: 'mongodb://localhost/statisticsservice-test'
   },
 
@@ -26,7 +26,7 @@ const config = {
     app: {
       name: 'statisticsservice'
     },
-    port: process.env.PORT || 3000,
+    port: process.env.PORT || 3006,
     db: 'mongodb://localhost/statisticsservice-production'
   }
 };
