@@ -8,7 +8,9 @@ var config = {
     app: {
       name    : 'aggregationservice',
       id      : 'aggregator',
-      secret  : 'aggregatorKey'
+      secret  : 'aggregatorKey',
+      timeout : 5000,
+      repeat  : 4
     },
     port: process.env.PORT || 3000,
     db: 'mongodb://localhost/aggregator-development'
@@ -19,7 +21,9 @@ var config = {
     app: {
       name: 'aggregationservice',
       id      : 'aggregator',
-      secret  : 'aggregatorKey'
+      secret  : 'aggregatorKey',
+      timeout : 5000,
+      repeat  : 4
     },
     port: process.env.PORT || 3000,
     db: 'mongodb://localhost/aggregator-development'
@@ -30,7 +34,9 @@ var config = {
     app: {
       name: 'aggregationservice',
       id      : 'aggregator',
-      secret  : 'aggregatorKey'
+      secret  : 'aggregatorKey',
+      timeout : 5000,
+      repeat  : 4
     },
     port: process.env.PORT || 3000,
     db: 'mongodb://localhost/aggregator-development'
