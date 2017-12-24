@@ -10,7 +10,7 @@ var StatSchema = new Schema({
 });
 
 StatSchema.statics.addRecord = function(info, callback){    
-    var model = mongoose.model('StatAuthByCode');
+    var model = mongoose.model('StatInfoByDraftOrder');
     let record = new model({
         info : info
     });
@@ -71,4 +71,4 @@ StatSchema.methods.getRecord = function(){
     return data;
 }
 
-mongoose.model('StatAuthByCode', StatSchema);
+mongoose.model('StatInfoByDraftOrder', StatSchema);
