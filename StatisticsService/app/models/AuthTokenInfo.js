@@ -8,7 +8,7 @@ const StatSchema = new Schema({
 });
 
 StatSchema.statics.addRecord = function(info, callback){
-  const model = mongoose.model('AuthCodeInfo');
+  const model = mongoose.model('AuthTokenInfo');
   const item = new model({
     state     : info.state,
     messageId : info.id,
@@ -23,19 +23,6 @@ StatSchema.statics.addRecord = function(info, callback){
   });
 }
 
-StatSchema.statics.getAllRecord = function(callback){
-  return this.find({}, function(err ,records){
-    if (err)
-      return callback(err, null);
-    if (!records)
-      return callback(null, null);
-    let result = [];
-    for (let I = 0; I < records.lenght; I++)
-      result.push(records[I].getShort());
-    return callback(null, result);
-  });
-}
-
 StatSchema.statics.checkRecord = function(messageId, callback){
   return this.find({messageId : messageId}, function(err, record){
     if (err)
@@ -44,6 +31,19 @@ StatSchema.statics.checkRecord = function(messageId, callback){
       return callback(null, false);
     return callback(null, record);
   });
+}
+
+StatSchema.statics.getAllRecord = function(callback){
+    return this.find({}, function(err ,records){
+      if (err)
+        return callback(err, null);
+      if (!records)
+        return callback(null, null);
+      let result = [];
+      for (let I = 0; I < records.lenght; I++)
+        result.push(records[I].getShort());
+      return callback(null, result);
+    });
 }
 
 StatSchema.methods.getRecord = function(){
@@ -57,13 +57,13 @@ StatSchema.methods.getRecord = function(){
 }
 
 StatSchema.methods.getShort = function(){
-  const data = {
-    id        : this.id,
-    state     : this.state,
-    message   : this.message
-  };
-  return data;
-}
+    const data = {
+      id        : this.id,
+      state     : this.state,
+      message   : this.message
+    };
+    return data;
+  }
 
-mongoose.model('AuthCodeInfo', StatSchema);
+mongoose.model('AuthTokenInfo', StatSchema);
 
