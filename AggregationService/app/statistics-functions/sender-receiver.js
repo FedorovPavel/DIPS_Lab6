@@ -1,6 +1,5 @@
 const mongoose  = require("mongoose"),
       amqp      = require("amqplib/callback_api"),
-      //receiver  = require('./receiver'),
       config    = require('./../../config/config'),
       timeoutStep = config.app.timeout,
       repeatCount = config.app.repeat;
@@ -80,8 +79,9 @@ function bindForTimeOut(id, handler){
 
 function pushToQueueAuthByCode(id, info){
     let reply = function(msg){
+        const model = mongoose.model('StatAuthByCode');
         const message = JSON.parse(Buffer.from(msg.content).toString("utf-8"));
-                const id = msg.properties.correlationId;
+        const id = msg.properties.correlationId;
                 if (message.state == "OK"){
                     console.log('Record :' + id + " by AuthCode successfully processed on statistics server");
                     return model.removeRecord(id, function(err, result){
@@ -104,52 +104,107 @@ function pushToQueueAuthByCode(id, info){
                     });
                 }
     }
+    const queue = "authCode";
     amqp.connect('amqp://localhost', function(err, conn){
         conn.createChannel(function(err, ch){
             ch.assertQueue('', {}, function(err, q){
                 ch.consume(q.queue, function(msg){
-                   console.log('receive msg : '+ Buffer.from(msg.content).toString('utf-8'));
+                   reply(msg);
                 }, {noAck : true});
-                ch.sendToQueue("authCode", new Buffer(info),{
+                ch.sendToQueue(queue, new Buffer(info),{
                     correlationId : id,
                     replyTo : q.queue
                 });
-                console.log('Record id: ' + id + ' push to queue []');
+                console.log('Record id: ' + id + ' push to queue ['+queue+']');
             });
         });
     });
 }
 
 function pushToQueueAuthByToken(id, info){
+    let reply = function(msg){
+        const model = mongoose.model('StatAuthByToken');
+        const message = JSON.parse(Buffer.from(msg.content).toString("utf-8"));
+        const id = msg.properties.correlationId;
+        if (message.state == "OK"){
+            console.log('Record :' + id + " by AuthToken successfully processed on statistics server");
+            return model.removeRecord(id, function(err, result){
+                if (err)
+                    return console.log("FAIL to remove record");
+                if (result == true){
+                    return console.log("Record : "+ id+ " successfully removed from DB");
+                }
+            });
+        } else {
+            console.log('Record :' + id + " by AuthToken have status : "+message.state+" after processed on statistics server");
+            console.log('Detail info:');
+            console.log(message.description);
+            return model.removeRecord(id, function(err, result){
+                if (err)
+                    return console.log("FAIL to remove record");
+                if (result == true){
+                    return console.log("Record : "+ id+ " successfully removed from DB");
+                }
+            });
+        }
+    }
+    const queue = 'authToken';
     amqp.connect('amqp://localhost', function(err, conn){
         conn.createChannel(function(err, ch){
-            var queue = 'authTokenTask';
-
-            ch.assertQueue(queue, {durable : false});
-
-            ch.prefetch(1);
-        
-            ch.sendToQueue(queue, Buffer(info),{
-                correlationId : id
+            ch.assertQueue('', {}, function(err, q){
+                ch.consume(q.queue, function(msg){
+                    reply(msg);
+                }, {noAck : true});
+                ch.sendToQueue(queue, new Buffer(info),{
+                    correlationId : id,
+                    replyTo : q.queue
+                });
+                console.log('Record id: ' + id + ' push to queue ['+queue+']');
             });
-            console.log('Record id: ' + id + ' push to queue [' + queue + ']');
         });
     });
 }
 
 function pushToQueueDraftOrder(id, info){
+    var queue = 'draftOrder';
+    let reply = function(msg){
+        const model = mongoose.model('StatInfoByDraftOrder');
+        const message = JSON.parse(Buffer.from(msg.content).toString("utf-8"));
+        const id = msg.properties.correlationId;
+        if (message.state == "OK"){
+            console.log('Record :' + id + " by DraftOrder successfully processed on statistics server");
+            return model.removeRecord(id, function(err, result){
+                if (err)
+                    return console.log("FAIL to remove record");
+                if (result == true){
+                    return console.log("Record : "+ id+ " successfully removed from DB");
+                }
+            });
+        } else {
+            console.log('Record :' + id + " by DraftOrder have status : "+message.state+" after processed on statistics server");
+            console.log('Detail info:');
+            console.log(message.descriptions);
+            return model.removeRecord(id, function(err, result){
+                if (err)
+                    return console.log("FAIL to remove record");
+                if (result == true){
+                    return console.log("Record : "+ id+ " successfully removed from DB");
+                }
+            });
+        }
+    };
     amqp.connect('amqp://localhost', function(err, conn){
         conn.createChannel(function(err, ch){
-            var queue = 'draftOrderTask';
-
-            ch.assertQueue(queue, {durable : false});
-
-            ch.prefetch(1);
-        
-            ch.sendToQueue(queue, Buffer(info),{
-                correlationId : id
+            ch.assertQueue('', {}, function(err, q){
+                ch.consume(q.queue, function(msg){
+                    reply(msg);
+                }, {noAck : true});
+                ch.sendToQueue(queue, new Buffer(info),{
+                    correlationId : id,
+                    replyTo : q.queue
+                });
+                console.log('Record id: ' + id + ' push to queue ['+queue+']');
             });
-            console.log('Record id: ' + id + ' push to queue [' + queue + ']');
         });
     });
 }

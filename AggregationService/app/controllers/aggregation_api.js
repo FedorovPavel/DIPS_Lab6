@@ -5,7 +5,7 @@ var express   = require('express'),
     bus       = require('./../coordinator/bus'),
     validator = require('./../validator/validator'),
     amqp      = require('amqplib/callback_api'),
-    statSender= require('./../statistics-functions/sender'),
+    statSender= require('./../statistics-functions/sender-receiver'),
     interval  = 20000;// 20s to repeate check live
     
 
@@ -87,7 +87,13 @@ router.post('/authByToken', function(req, res ,next){
     ref_token : getToken(req)
   };
   return bus.getTokenByToken(data, function(err, status, response){
-    return res.status(status).send(response);
+    res.status(status).send(response);
+    const info = {
+      status : status,
+      response : response,
+      entryData : data
+    };
+    return statSender.sendAuthorizationByTokenInfo(info);
   });
 });
 
@@ -140,16 +146,43 @@ router.post('/orders/', function(req, res, next){
     let param = {};
     param.userId = info.id;
     param.carID = validator.checkID(req.body.carID);
-    if (typeof(param.carID) == 'undefined')
-      return res.status(400).send({status : 'Error', message : 'Bad request : Invalid car ID'});
+    if (typeof(param.carID) == 'undefined'){
+      res.status(400).send({status : 'Error', message : 'Bad request : Invalid car ID'});
+      const data = {
+        status : 400,
+        response : {status : 'Error', message : 'Bad request : Invalid car ID'},
+        entryData : param
+      };
+      return statSender.sendInfoByDraftOrder(data);
+    }
     param.startDate = validator.ConvertStringToDate(req.body.startDate);
-    if (!param.startDate)
-      return res.status(400).send({status : 'Error', message : 'Bad request : Invalid start rent date'});
+    if (!param.startDate){
+      res.status(400).send({status : 'Error', message : 'Bad request : Invalid start rent date'});
+      const data = {
+        status : 400,
+        response : {status : 'Error', message : 'Bad request : Invalid start rent date'},
+        entryData : param
+      };
+      return statSender.sendInfoByDraftOrder(data);
+    }
     param.endDate = validator.ConvertStringToDate(req.body.endDate);
-    if (!param.endDate)
-      return res.status(400).send({status : 'Error', message : 'Bad request : Invalid end rent date'});
+    if (!param.endDate){
+      res.status(400).send({status : 'Error', message : 'Bad request : Invalid end rent date'});
+      const data = {
+        status : 400,
+        response : {status : 'Error', message : 'Bad request : Invalid end rent date'},
+        entryData : param
+      };
+      return statSender.sendInfoByDraftOrder(data);
+    }
     return bus.createOrder(param, function(err, status, response){
-        return res.status(status).send(response);
+        res.status(status).send(response);
+        const data = {
+          status : status,
+          response : response,
+          entryData : param
+        };
+        return statSender.sendInfoByDraftOrder(data);
     });
   });
 });
