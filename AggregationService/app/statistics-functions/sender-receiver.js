@@ -64,7 +64,7 @@ module.exports = {
             delete container.id;
             delete container.count;
             bindForTimeOut(id, checkRecordByAuthToken);
-            pushToQueueAuthByToken(id, JSON.stringify(container));
+            pushToQueueDraftOrder(id, JSON.stringify(container));
             return;
         });
     }

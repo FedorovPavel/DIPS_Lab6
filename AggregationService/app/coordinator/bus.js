@@ -1,14 +1,16 @@
 const   _CatalogHost    = 'http://localhost:3004',
         _OrderHost      = 'http://localhost:3002',
         _BillingHost    = 'http://localhost:3003',
-        _AuthHost       = 'http://localhost:3001';
+        _AuthHost       = 'http://localhost:3001',
+        _StatHost       = 'http://localhost:3006';
 
 const   config  = require('./../../config/config');
 
 var     AuthToken   = null,
         OrderToken  = null,
         BillingToken= null,
-        CatalogToken= null;
+        CatalogToken= null,
+        StatToken   = null;
 
 module.exports = {
     //  AuthMethods
@@ -265,6 +267,21 @@ module.exports = {
             });
         }
         return main_function(data, callback);
+    },
+    getAllReport : function(data, callback){
+        let main_function = function(data, callback){
+            const url = _StatHost + '/report/all-report';
+            const options = createOptions(url, 'GET', StatToken, null, null);
+            return createAndSendGetHttpRequest(options, function(err, status, response){
+                return responseHandlerObject(err, status, response, function(err, status, response){
+                    const repeat = checkServicesInformationFromBilling(status, response, main_function, data, callback);
+                    if (!repeat)
+                        return callback(err, status, response);
+                    return;
+                });
+            });
+        }
+        return main_function(data, callback);
     }
 }
 
@@ -420,6 +437,22 @@ function checkServicesInformationFromBilling(status, response, method, info, cal
     if (response && typeof(response.service) != 'undefined'){
         console.log('Set new BillingToken');
         BillingToken = response.service;
+        delete response.service;
+    }
+    return false;
+}
+
+function checkServicesInformationFromStat(status, response, method, info, callback){
+    if (status == 401 && response.status == 'Service error'){
+        console.log('StatToken not topical');
+        delete StatToken;
+        StatToken = null;
+        method(info, callback);
+        return true;
+    } 
+    if (response && typeof(response.service) != 'undefined'){
+        console.log('Set new StatToken');
+        StatToken = response.service;
         delete response.service;
     }
     return false;

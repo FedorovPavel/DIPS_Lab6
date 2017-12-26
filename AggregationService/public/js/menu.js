@@ -11,6 +11,7 @@ class menu {
         this.draftExecution = false;
         this.openTabs       = 'catalog';
         this.getErrorTemplate();
+        this.getReportsTemplate();
         this.bindHandleToHeader();
         this.recordCounter();
         this.changePager();
@@ -26,6 +27,14 @@ class menu {
         self.errorTemplate = $('div#error_template').clone();
         $('div#error_template').remove();
         $(self.errorTemplate).removeAttr('id');
+        return;
+    }
+
+    getReportsTemplate(){
+        let self = this;
+        self.reportTemplate = $('div#report_template').clone();
+        $('div#report_template').remove();
+        $(self.reportTemplate).removeAttr('id');
         return;
     }
     //  Отображение template
@@ -142,6 +151,7 @@ class menu {
         const menuPills = $('ul#nav-pills');    
         const cars      = menuPills.find('li#automobile-pill');
         const orders    = menuPills.find('li#orders-pill');
+        const report    = menuPills.find('li#report-pill');
         const auth      = $('button#auth_submit').click(function(){
             self.authUser();
         });
@@ -158,6 +168,15 @@ class menu {
             $(menuPills).find('li').removeClass('active');
             $(this).addClass('active');
             self.openTabs = 'order';
+            self.page = 0;
+            self.recordCounter();            
+            self.changePager(); 
+            self.draftExecution = false;
+        });
+        $(report).click(function(){
+            $(menuPills).find('li').removeClass('active');
+            $(this).addClass('active');
+            self.openTabs = 'report';
             self.page = 0;
             self.recordCounter();            
             self.changePager(); 
@@ -232,6 +251,9 @@ class menu {
                 $(prev).click(function(){ self.handlePrevPage(self.order.getOrders, self.order)});
                 $(next).click(function(){ self.handleNextPage(self.order.getOrders, self.order)});
                 self.order.getOrders(self.page, self.count, self.order);
+                break;
+            case 'report':
+                self.getReports();
                 break;
         }
         return;
@@ -472,6 +494,76 @@ class menu {
         self.tokenTimer = setTimeout(function(){
             self.token = null;
         }, 10000);
+    }
+
+    fillReports(content){
+        let self = this;
+        const list = self.getList();
+        const tables = $(self.reportTemplate).clone();
+        $(list).append(tables);
+        let arrayInfo = [Array.from(content.authCode), Array.from(content.authToken), Array.from(content.draftOrder)];
+        let names     = ['#authCodeReportTable', '#authTokenReportTable', "#draftOrderReportTable"];
+        for (let I = 0; I < arrayInfo.length; I++){
+            let name = names[I];
+            for (let J = 0; J < arrayInfo[I].length; J++){
+                let tr = document.createElement('tr');
+                let td = document.createElement('td');
+                td.innerText = J;
+                td.classList.add('col-1');
+                $(tr).append(td);
+                td = document.createElement('td');
+                td.classList.add('col-2');
+                td.innerText = arrayInfo[I][J].id;
+                $(tr).append(td);
+                td = document.createElement('td');
+                td.classList.add('col-3');
+                td.innerText = arrayInfo[I][J].state;
+                $(tr).append(td);
+                td = document.createElement('td');
+                td.classList.add('col-4-1');
+                td.innerText = arrayInfo[I][J].message;
+                $(tr).append(td);
+                td = document.createElement('td');
+                td.classList.add('col-4');
+                td.innerText = arrayInfo[I][J].description;
+                $(tr).append(td);
+                $(list).find(name).append(tr);
+            }
+        }
+    }
+
+    getReports(){
+        let self = this;
+        const url = '/aggregator/reports/all';
+        let req = new XMLHttpRequest();
+        req.open('GET', url, true);
+        req.setRequestHeader("Authorization", "Bearer " + self.token);
+        req.onreadystatechange = function(){
+            if (req.readyState != 4)
+                return;
+            self.experidToken();  
+            if (req.status == 200){
+                const res = JSON.parse(req.response);
+                self.clearList();
+                self.fillReports(res);
+                self.pagination(0, 0);
+            } else if (req.status == 401){
+                if (self.refreshToken){
+                    self.refresh();
+                    setTimeout(function(){
+                        self.getReports();
+                    },1000);
+                } else {
+                    self.rendErrorTemplate(JSON.parse(req.response).message, req.status);
+                }
+            } else {
+                self.clearList();
+                self.page = 0;
+                self.rendErrorTemplateToList(JSON.parse(req.response).message, req.status);
+                self.pagination(0, 0);
+            }
+        }
+        req.send();
     }
 };
 

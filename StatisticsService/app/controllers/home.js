@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose'),
-      AuthCode = require('AuthCodeInfo'),
-      AuthToken = require('AuthTokenInfo'),
-      DraftOrder = require('DraftOrderInfo');
+      AuthCode = mongoose.model('AuthCodeInfo'),
+      AuthToken = mongoose.model('AuthTokenInfo'),
+      DraftOrder = mongoose.model('DraftOrderInfo');
 const rec       = require('./../receiver/receiver'),
       passport  = require('./../passport/my-passport');;
 
