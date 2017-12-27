@@ -87,11 +87,15 @@ function ProccesedAuthCodeRecord(msg, callback){
             if (message.status && message.status == 200){
                 data.state = "OK";
                 data.description = '';
-                console.log('AuthCodeInfo : OK for id :' + id);
                 response.state = "OK";
                 return model.addRecord(data, function(err, result){
-                    if (err)
-                        return console.log('DB ERROR');
+                    if (err && err.code == 11000){
+                        console.log('AuthCodeInfo : OK for id :' + id);
+                        return callback(response);
+                    } else if (err) {
+                        console.log('DB error');
+                    }
+                    console.log('AuthCodeInfo : OK for id :' + id);
                     return callback(response);
                 });
             } else {
@@ -101,8 +105,11 @@ function ProccesedAuthCodeRecord(msg, callback){
                 data.state = "ERROR";
                 data.description = "Invalid message status or undefined";
                 return model.addRecord(data, function(err, result){
-                    if (err)
+                    if (err && err.code == 11000){
+                        return callback(response);
+                    } else if (err){
                         return console.log("DB ERROR");
+                    }
                     return callback(response);
                 });
             }
@@ -134,8 +141,11 @@ function ProccesedAuthTokenRecord(msg, callback){
                 response.state = "OK";
                 console.log('AuthTokenInfo : OK for id :' + id);
                 return model.addRecord(data, function(err, result){
-                    if (err)
-                        return console.log('DB ERROR');
+                    if (err && err.code == 11000){
+                        return callback(response);
+                    } else if (err){
+                        return console.log("DB ERROR");   
+                    }
                     return callback(response);
                 });
             } else {
@@ -145,8 +155,10 @@ function ProccesedAuthTokenRecord(msg, callback){
                 data.state = "ERROR";
                 data.description = "Invalid message status or undefined";
                 return model.addRecord(data, function(err, result){
-                    if (err)
-                        return console.log("DB ERROR");
+                    if (err && err.code == 11000){
+                        return callback(response);
+                    } else if (err)    
+                        return console.log("DB ERROR");   
                     return callback(response);
                 });
             }
@@ -179,7 +191,9 @@ function ProccesedDraftOrderRecord(msg, callback){
                 data.description = "";
                 console.log('DraftOrderInfo : OK for id :' + id);
                 return model.addRecord(data, function(err, result){
-                    if (err)
+                    if (err && err.code == 11000){
+                        return callback(response);
+                    }else if (err)
                         return console.log('DB ERROR');
                     return callback(response);
                 });
@@ -191,7 +205,9 @@ function ProccesedDraftOrderRecord(msg, callback){
                 data.state = "ERROR";
                 data.description = state;
                 return model.addRecord(data, function(err, result){
-                    if (err)
+                    if (err && err.code == 11000)
+                        return callback(response);
+                    else if (err)
                         return console.log("DB ERROR");
                     return callback(response);
                 });

@@ -83,22 +83,22 @@ function pushToQueueAuthByCode(id, info){
         const message = JSON.parse(Buffer.from(msg.content).toString("utf-8"));
         const id = msg.properties.correlationId;
                 if (message.state == "OK"){
-                    console.log('Record :' + id + " by AuthCode successfully processed on statistics server");
                     return model.removeRecord(id, function(err, result){
                         if (err)
                             return console.log("FAIL to remove record");
                         if (result == true){
+                            console.log('Record :' + id + " by AuthCode successfully processed on statistics server");
                             return console.log("Record : "+ id+ " successfully removed from DB");
                         }
                     });
                 } else {
-                    console.log('Record :' + id + " by AuthCode have status : "+message.state+" after processed on statistics server");
-                    console.log('Detail info:');
-                    console.log(message.descriptions);
                     return model.removeRecord(id, function(err, result){
                         if (err)
                             return console.log("FAIL to remove record");
                         if (result == true){
+                            console.log('Record :' + id + " by AuthCode have status : "+message.state+" after processed on statistics server");
+                            console.log('Detail info:');
+                            console.log(message.descriptions);
                             return console.log("Record : "+ id+ " successfully removed from DB");
                         }
                     });

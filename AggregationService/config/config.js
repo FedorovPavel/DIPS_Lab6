@@ -9,7 +9,7 @@ var config = {
       name    : 'aggregationservice',
       id      : 'aggregator',
       secret  : 'aggregatorKey',
-      timeout : 50000,
+      timeout : 3000,
       repeat  : 4
     },
     port: process.env.PORT || 3000,

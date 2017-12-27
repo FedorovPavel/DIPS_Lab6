@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 
 const StatSchema = new Schema({
   state: String,
-  messageId: String,
+  messageId: {type : String, unique : true},
   message : String,
   description : String
 });
@@ -12,7 +12,7 @@ StatSchema.statics.addRecord = function(info, callback){
   const model = mongoose.model('AuthCodeInfo');
   const item = new model({
     state     : info.state,
-    messageId : info.id,
+    messageId : info.messageId,
     message   : info.message,
     description : info.description
   });
